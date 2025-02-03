@@ -97,7 +97,7 @@ class Chromosome:
             raise ValueError("Crossover must be performed with another Chromosome")
 
         for i in range(self.max_tries):
-            new_chromosome = Chromosome(self.input_shape)
+            new_chromosome = Chromosome(self.input_shape, self.num_classes)
 
             idx1 = 0  # indeks dla pierwszego chromosomu
             idx2 = 0  # indeks dla drugiego chromosomu
@@ -165,7 +165,7 @@ class Chromosome:
                 prev_layer = self.layers[i - 1]
                 if current_layer.input_shape != prev_layer.calc_output_shape():
                     return False, (f"Niezgodność wymiarów między warstwami {i - 1} i {i}: "
-                                   f"{prev_layer.output_shape} vs {current_layer.input_shape}")
+                                   f"{prev_layer.calc_output_shape()} vs {current_layer.input_shape}")
 
             # 2. Sprawdź ograniczenia dla warstw konwolucyjnych
             if isinstance(current_layer, Conv2dLayer):
