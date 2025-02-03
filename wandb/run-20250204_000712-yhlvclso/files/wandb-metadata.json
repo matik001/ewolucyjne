@@ -1,0 +1,48 @@
+{
+    "os": "Windows-11-10.0.22631-SP0",
+    "python": "3.12.2",
+    "heartbeatAt": "2025-02-03T23:07:14.081558",
+    "startedAt": "2025-02-03T23:07:12.286139",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "D:\\UWR\\Ewolucyjne\\projekt\\main.py",
+    "codePathLocal": "main.py",
+    "codePath": "main.py",
+    "git": {
+        "remote": "git@github.com:matik001/ewolucyjne.git",
+        "commit": "b9c9dedc223352db52d8dbb0474989c26bb3192d"
+    },
+    "email": "mateusz.kisiel.mk@gmail.com",
+    "root": "D:/UWR/Ewolucyjne/projekt",
+    "host": "MatikWinsus",
+    "username": "mateu",
+    "executable": "C:\\Users\\mateu\\miniconda3\\python.exe",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 3110.0,
+        "min": 0.0,
+        "max": 3110.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3110.0,
+            "min": 0.0,
+            "max": 3110.0
+        }
+    ],
+    "disk": {},
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+            "memory_total": 4294967296
+        }
+    ],
+    "memory": {
+        "total": 15.698577880859375
+    }
+}

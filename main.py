@@ -1,7 +1,8 @@
 import torch
 import torchvision
+import wandb
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
 from optimizer.Chromosome import Chromosome
@@ -9,7 +10,7 @@ from optimizer.Layers import Conv2dLayer, ReluLayer, MaxPool2dLayer, DropoutLaye
 from optimizer.NASOptimizer import NASOptimizer
 
 
-def get_mnist_loaders():
+def get_mnist_loaders(limit = False):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
@@ -17,6 +18,10 @@ def get_mnist_loaders():
 
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
     test_dataset = datasets.MNIST('./data', train=False, transform=transform)
+
+    # if limit:
+    #     train_dataset = Subset(train_dataset, list(range(64*1)))
+    #     test_dataset = Subset(test_dataset, list(range(64*1)))
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
@@ -27,14 +32,14 @@ def get_mnist_loaders():
 
 
 def crossover_example1():
-    chrom1 = Chromosome((3, 32, 32))
+    chrom1 = Chromosome((3, 32, 32), 10)
     chrom1.add_layer(Conv2dLayer((3, 32, 32), 16, 3))
     chrom1.add_layer(ReluLayer((16, 30, 30)))
     chrom1.add_layer(Conv2dLayer((16, 30, 30), 32, 3))
     chrom1.add_layer(MaxPool2dLayer((32, 28, 28), 2))
     print(chrom1)
 
-    chrom2 = Chromosome((3, 32, 32))
+    chrom2 = Chromosome((3, 32, 32), 10)
     chrom2.add_layer(Conv2dLayer((3, 32, 32), 24, 3))
     chrom2.add_layer(MaxPool2dLayer((24, 30, 30), 2))
     chrom2.add_layer(ReluLayer((24, 15, 15)))
@@ -168,7 +173,7 @@ def test_mnist_training():
     return chrom, fitness
 
 def run_optimizer():
-    train_loader, test_loader = get_mnist_loaders()
+    train_loader, test_loader = get_mnist_loaders(True)
 
     nas = NASOptimizer(
         input_shape=(1, 28, 28),  # MNIST format
@@ -176,7 +181,8 @@ def run_optimizer():
         population_size=10,
         num_generations=5,
         mutation_rate=0.3,
-        elite_size=2
+        elite_size=2,
+        project_name="MNIST-NAS"
     )
 
     best_network = nas.optimize(train_loader, test_loader)
@@ -190,6 +196,8 @@ def main():
 
 
 if __name__ == "__main__":
+    wandb.login()
+
     main()
     # deepseek()
     # claude()

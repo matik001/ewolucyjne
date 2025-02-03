@@ -1,0 +1,1 @@
+{"total_parameters": 38058, "_timestamp": 1738619273.8734925, "_runtime": 45.30395555496216, "_step": 22, "train/batch_loss": 0.2505607604980469, "train/batch_accuracy": 90.34232796892341, "train/batch": 900, "epoch": 1, "train/epoch_loss": 0.30515386672543565, "test/epoch_loss": 0.2769698403823148, "test/epoch_accuracy": 90.7, "_wandb": {"runtime": 44}}

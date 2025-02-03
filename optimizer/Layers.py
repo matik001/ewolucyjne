@@ -50,6 +50,8 @@ class Conv2dLayer(Layer):
         super().__init__(input_shape)
 
     def calc_output_shape(self):
+        if(len(self.input_shape) < 3):
+            print("bad input size conv2d")
         h = ((self.input_shape[1] + 2 * self.padding - self.kernel_size) // self.stride) + 1
         w = ((self.input_shape[2] + 2 * self.padding - self.kernel_size) // self.stride) + 1
         return (self.out_channels, h, w)
