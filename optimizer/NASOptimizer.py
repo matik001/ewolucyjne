@@ -20,7 +20,8 @@ class NASOptimizer:
                  num_generations: int = 10,
                  mutation_rate: float = 0.3,
                  elite_size: int = 2,
-                 project_name: str = "NAS-Optimization"):
+                 project_name: str = "NAS-Optimization",
+                 epoch: int = 2):
         """
         Inicjalizacja optymalizatora NAS.
 
@@ -43,6 +44,7 @@ class NASOptimizer:
         self.best_fitness = float('-inf')
         self.best_chromosome = None
         self.project_name = project_name
+        self.epoch = epoch
 
     def initialize_population(self):
         """Inicjalizacja początkowej populacji losowymi chromosomami."""
@@ -122,7 +124,6 @@ class NASOptimizer:
                                       test_loader: DataLoader,
                                       generation: int,
                                       chromosome_id: int,
-                                      run,
                                       device: str = 'cuda') -> float:
         """
         Trenuje i ocenia pojedynczy chromosom.
@@ -140,74 +141,93 @@ class NASOptimizer:
             float: Wartość fitness (dokładność na zbiorze testowym)
         """
         try:
-            model = chromosome.to_nn_module().to(device)
-            optimizer = optim.Adam(model.parameters(), lr=0.001)
-            criterion = nn.NLLLoss()
+            with wandb.init(
+                    project=self.project_name,
+                    name=f"NAS_optimization_MNIST({generation} - {chromosome_id})",
+                    config={
+                        "input_shape": self.input_shape,
+                        "num_classes": self.num_classes,
+                        "population_size": self.population_size,
+                        "num_generations": self.num_generations,
+                        "mutation_rate": self.mutation_rate,
+                        "elite_size": self.elite_size,
+                        "generation": generation,
+                        "chromosome_id": chromosome_id
+                    },
+            ) as run:
+                model = chromosome.to_nn_module().to(device)
 
-            total_params = sum(p.numel() for p in model.parameters())
-            run.log({
-                f"chromosome_{chromosome_id}/total_parameters": total_params,
-                f"chromosome_{chromosome_id}/num_layers": len(chromosome.layers)
-            })
+                run.log({
+                    "architecture": str(chromosome)
+                })
 
-            for epoch in range(2):
-                # Trening
-                model.train()
-                train_loss = 0
-                correct = 0
-                total = 0
+                optimizer = optim.Adam(model.parameters(), lr=0.001)
+                criterion = nn.NLLLoss()
 
-                for batch_idx, (inputs, targets) in enumerate(train_loader):
-                    inputs, targets = inputs.to(device), targets.to(device)
-                    optimizer.zero_grad()
+                total_params = sum(p.numel() for p in model.parameters())
+                run.log({
+                    f"total_parameters": total_params,
+                    f"num_layers": len(chromosome.layers)
+                })
 
-                    outputs = model(inputs)
-                    loss = criterion(outputs, targets)
-                    loss.backward()
-                    optimizer.step()
+                for epoch in range(self.epoch):
+                    # Trening
+                    model.train()
+                    train_loss = 0
+                    correct = 0
+                    total = 0
 
-                    train_loss += loss.item()
-                    _, predicted = outputs.max(1)
-                    total += targets.size(0)
-                    correct += predicted.eq(targets).sum().item()
-
-                    if batch_idx % 100 == 0:
-                        run.log({
-                            f"chromosome_{chromosome_id}/train/batch_loss": loss.item(),
-                            f"chromosome_{chromosome_id}/train/batch_accuracy": 100. * correct / total,
-                            "epoch": epoch,
-                            "batch": batch_idx
-                        })
-
-                # Ewaluacja
-                model.eval()
-                test_loss = 0
-                correct = 0
-                total = 0
-
-                with torch.no_grad():
-                    for inputs, targets in test_loader:
+                    for batch_idx, (inputs, targets) in enumerate(train_loader):
                         inputs, targets = inputs.to(device), targets.to(device)
+                        optimizer.zero_grad()
+
                         outputs = model(inputs)
                         loss = criterion(outputs, targets)
+                        loss.backward()
+                        optimizer.step()
 
-                        test_loss += loss.item()
+                        train_loss += loss.item()
                         _, predicted = outputs.max(1)
                         total += targets.size(0)
                         correct += predicted.eq(targets).sum().item()
 
-                epoch_train_loss = train_loss / len(train_loader)
-                epoch_test_loss = test_loss / len(test_loader)
-                epoch_test_acc = 100. * correct / total
+                        if batch_idx % 100 == 0:
+                            run.log({
+                                f"train/batch_loss": loss.item(),
+                                f"train/batch_accuracy": 100. * correct / total,
+                                "epoch": epoch,
+                                "batch": batch_idx
+                            })
 
-                run.log({
-                    f"chromosome_{chromosome_id}/train/epoch_loss": epoch_train_loss,
-                    f"chromosome_{chromosome_id}/test/epoch_loss": epoch_test_loss,
-                    f"chromosome_{chromosome_id}/test/accuracy": epoch_test_acc,
-                    "epoch": epoch
-                })
+                    # Ewaluacja
+                    model.eval()
+                    test_loss = 0
+                    correct = 0
+                    total = 0
 
-            return epoch_test_acc
+                    with torch.no_grad():
+                        for inputs, targets in test_loader:
+                            inputs, targets = inputs.to(device), targets.to(device)
+                            outputs = model(inputs)
+                            loss = criterion(outputs, targets)
+
+                            test_loss += loss.item()
+                            _, predicted = outputs.max(1)
+                            total += targets.size(0)
+                            correct += predicted.eq(targets).sum().item()
+
+                    epoch_train_loss = train_loss / len(train_loader)
+                    epoch_test_loss = test_loss / len(test_loader)
+                    epoch_test_acc = 100. * correct / total
+
+                    run.log({
+                        f"train/epoch_loss": epoch_train_loss,
+                        f"test/epoch_loss": epoch_test_loss,
+                        f"test/accuracy": epoch_test_acc,
+                        "epoch": epoch
+                    })
+
+                return epoch_test_acc
 
         except Exception as e:
             print(f"Error in training chromosome {chromosome_id}: {str(e)}")
@@ -226,61 +246,50 @@ class NASOptimizer:
         Returns:
             Chromosome: Najlepszy znaleziony chromosom
         """
-        with wandb.init(
-                project=self.project_name,
-                name="NAS_optimization",
-                config={
-                    "input_shape": self.input_shape,
-                    "num_classes": self.num_classes,
-                    "population_size": self.population_size,
-                    "num_generations": self.num_generations,
-                    "mutation_rate": self.mutation_rate,
-                    "elite_size": self.elite_size
-                }
-        ) as run:
-            print("Initializing population...")
-            self.initialize_population()
 
-            for generation in range(self.num_generations):
-                print(f"\nGeneration {generation + 1}/{self.num_generations}")
+        print("Initializing population...")
+        self.initialize_population()
 
-                fitness_scores = []
-                for i, chromosome in enumerate(self.population):
-                    print(f"\nEvaluating chromosome {i + 1}/{self.population_size}")
+        for generation in range(self.num_generations):
+            print(f"\nGeneration {generation + 1}/{self.num_generations}")
 
-                    fitness = self.train_and_evaluate_chromosome(
-                        chromosome, train_loader, test_loader,
-                        generation, i, run, device
-                    )
-                    fitness_scores.append(fitness)
+            fitness_scores = []
+            for i, chromosome in enumerate(self.population):
+                print(f"\nEvaluating chromosome {i + 1}/{self.population_size}")
 
-                    if fitness > self.best_fitness:
-                        self.best_fitness = fitness
-                        self.best_chromosome = copy.deepcopy(chromosome)
-                        run.log({
-                            "best_fitness": self.best_fitness,
-                            "best_generation": generation,
-                            "best_chromosome": i,
-                            "best_architecture": wandb.Html(str(chromosome))
-                        })
+                fitness = self.train_and_evaluate_chromosome(
+                    chromosome, train_loader, test_loader,
+                    generation, i, device
+                )
+                fitness_scores.append(fitness)
 
-                # Logowanie statystyk generacji
-                run.log({
-                    "generation": generation,
-                    "mean_fitness": np.mean(fitness_scores),
-                    "max_fitness": max(fitness_scores),
-                    "min_fitness": min(fitness_scores),
-                    "fitness_std": np.std(fitness_scores),
-                })
+                if fitness > self.best_fitness:
+                    self.best_fitness = fitness
+                    self.best_chromosome = copy.deepcopy(chromosome)
+                    # run.log({
+                    #     "best_fitness": self.best_fitness,
+                    #     "best_generation": generation,
+                    #     "best_chromosome": i,
+                    #     "best_architecture": wandb.Html(str(chromosome))
+                    # })
 
-                if generation < self.num_generations - 1:
-                    self.create_next_generation(fitness_scores)
+            # Logowanie statystyk generacji
+            # run.log({
+            #     "generation": generation,
+            #     "mean_fitness": np.mean(fitness_scores),
+            #     "max_fitness": max(fitness_scores),
+            #     "min_fitness": min(fitness_scores),
+            #     "fitness_std": np.std(fitness_scores),
+            # })
 
-            # Logowanie końcowych wyników
-            run.log({
-                "final_best_fitness": self.best_fitness,
-                "final_architecture": wandb.Html(str(self.best_chromosome))
-            })
+            if generation < self.num_generations - 1:
+                self.create_next_generation(fitness_scores)
+
+        # Logowanie końcowych wyników
+        # run.log({
+        #     "final_best_fitness": self.best_fitness,
+        #     "final_architecture": wandb.Html(str(self.best_chromosome))
+        # })
 
         return self.best_chromosome
 

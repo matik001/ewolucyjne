@@ -182,7 +182,8 @@ def run_optimizer():
         num_generations=5,
         mutation_rate=0.3,
         elite_size=2,
-        project_name="MNIST-NAS"
+        project_name="MNIST-NAS",
+        epoch=5
     )
 
     best_network = nas.optimize(train_loader, test_loader)
