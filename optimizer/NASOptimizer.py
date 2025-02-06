@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 
 from optimizer.Layers import Layer, LinearLayer, Conv2dLayer, MaxPool2dLayer, DropoutLayer, ReluLayer
 from optimizer.Chromosome import Chromosome
+from utils import eval
 
 
 class NASOptimizer:
@@ -205,32 +206,32 @@ class NASOptimizer:
 
                     # Ewaluacja
                     model.eval()
-                    validation_loss = 0
-                    correct = 0
-                    total = 0
+                    # validation_loss = 0
+                    # correct = 0
+                    # total = 0
 
-                    with torch.no_grad():
-                        for inputs, targets in val_loader:
-                            inputs, targets = inputs.to(device), targets.to(device)
-                            outputs = model(inputs)
-                            loss = criterion(outputs, targets)
+                    # with torch.no_grad():
+                    #     for inputs, targets in val_loader:
+                    #         inputs, targets = inputs.to(device), targets.to(device)
+                    #         outputs = model(inputs)
+                    #         loss = criterion(outputs, targets)
 
-                            validation_loss += loss.item()
-                            _, predicted = outputs.max(1)
-                            total += targets.size(0)
-                            correct += predicted.eq(targets).sum().item()
+                    #         validation_loss += loss.item()
+                    #         _, predicted = outputs.max(1)
+                    #         total += targets.size(0)
+                    #         correct += predicted.eq(targets).sum().item()
+
+                    # epoch_validation_loss = validation_loss / len(val_loader)
+                    # epoch_validation_acc = 100. * correct / total
 
                     epoch_train_loss = train_loss / len(train_loader)
-                    epoch_validation_loss = validation_loss / len(test_loader)
-                    epoch_validation_acc = 100. * correct / total
-
+                    epoch_validation_loss, epoch_validation_acc = eval(model, val_loader, device, "validation")
                     run.log({
                         f"train/epoch_loss": epoch_train_loss,
                         f"validation/epoch_loss": epoch_validation_loss,
                         f"validation/accuracy": epoch_validation_acc,
                         "epoch": epoch
                     })
-                    print(f"Validation, Epoch: {epoch}, Train Loss: {epoch_train_loss}, Validation Loss: {epoch_validation_loss}, Validation Accuracy: {epoch_validation_acc}")
 
                 return epoch_validation_acc
 
@@ -289,6 +290,7 @@ class NASOptimizer:
 
             if generation < self.num_generations - 1:
                 self.create_next_generation(fitness_scores)
+                eval(self.best_chromosome.to_nn_module().to(device), test_loader, device, "test2")
 
         # Logowanie końcowych wyników
         # run.log({
