@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 from optimizer.Layers import Layer, LinearLayer, Conv2dLayer, MaxPool2dLayer, DropoutLayer, ReluLayer
 from optimizer.Chromosome import Chromosome
-from utils import eval
+from utils import eval_model
 
 
 class NASOptimizer:
@@ -22,7 +22,10 @@ class NASOptimizer:
                  mutation_rate: float = 0.3,
                  elite_size: int = 2,
                  project_name: str = "NAS-Optimization",
-                 epoch: int = 2):
+                 epoch: int = 2,
+                 min_layers: int = 2,
+                 max_layers: int = 3
+                 ):
         """
         Inicjalizacja optymalizatora NAS.
 
@@ -46,6 +49,8 @@ class NASOptimizer:
         self.best_chromosome = None
         self.project_name = project_name
         self.epoch = epoch
+        self.min_layers = min_layers
+        self.max_layers = max_layers
 
     def initialize_population(self):
         """Inicjalizacja początkowej populacji losowymi chromosomami."""
@@ -55,8 +60,8 @@ class NASOptimizer:
                 chromosome = Chromosome.generate_random(
                     self.input_shape,
                     self.num_classes,
-                    min_layers=3,
-                    max_layers=10
+                    min_layers=self.min_layers,
+                    max_layers=self.max_layers
                 )
                 self.population.append(chromosome)
             except Exception as e:
@@ -225,7 +230,8 @@ class NASOptimizer:
                     # epoch_validation_acc = 100. * correct / total
 
                     epoch_train_loss = train_loss / len(train_loader)
-                    epoch_validation_loss, epoch_validation_acc = eval(model, val_loader, device, "validation")
+                    epoch_validation_loss, epoch_validation_acc = eval_model(model, val_loader, device, "validation")
+                    print("!!!")
                     run.log({
                         f"train/epoch_loss": epoch_train_loss,
                         f"validation/epoch_loss": epoch_validation_loss,
@@ -290,7 +296,7 @@ class NASOptimizer:
 
             if generation < self.num_generations - 1:
                 self.create_next_generation(fitness_scores)
-                eval(self.best_chromosome.to_nn_module().to(device), test_loader, device, "test2")
+                eval_model(self.best_chromosome.to_nn_module().to(device), test_loader, device, "test2")
 
         # Logowanie końcowych wyników
         # run.log({

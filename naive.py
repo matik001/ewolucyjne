@@ -5,6 +5,8 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
+from data_loaders import get_mnist_loaders
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Parametry
@@ -18,22 +20,24 @@ transform = transforms.Compose([
     transforms.Normalize((0.1307,), (0.3081,))
 ])
 
-train_dataset = torchvision.datasets.MNIST(root='./data',
-                                           train=True,
-                                           transform=transform,
-                                           download=True)
+# train_dataset = torchvision.datasets.MNIST(root='./data',
+#                                            train=True,
+#                                            transform=transform,
+#                                            download=True)
 
-test_dataset = torchvision.datasets.MNIST(root='./data',
-                                          train=False,
-                                          transform=transform)
+# test_dataset = torchvision.datasets.MNIST(root='./data',
+#                                           train=False,
+#                                           transform=transform)
 
-train_loader = DataLoader(dataset=train_dataset,
-                          batch_size=batch_size,
-                          shuffle=True)
+# train_loader = DataLoader(dataset=train_dataset,
+#                           batch_size=batch_size,
+#                           shuffle=True)
 
-test_loader = DataLoader(dataset=test_dataset,
-                         batch_size=batch_size,
-                         shuffle=False)
+# test_loader = DataLoader(dataset=test_dataset,
+#                          batch_size=batch_size,
+#                          shuffle=False)
+
+train_loader, val_loader, test_loader = get_mnist_loaders()
 
 
 class ConvNet(nn.Module):
@@ -84,6 +88,19 @@ for epoch in range(num_epochs):
         if (i + 1) % 100 == 0:
             print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{total_step}], Loss: {loss.item():.4f}')
 
+
+model.eval()
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for images, labels in val_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        outputs = model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+    print(f'Dokładność modelu na zbiorze walidacyjnym: {100 * correct / total}%')
 
 model.eval()
 with torch.no_grad():

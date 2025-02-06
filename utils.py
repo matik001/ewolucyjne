@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-def eval(model, data_loader, device, mode = "Test"):
+def eval_model(model, data_loader, device, mode = "Test"):
     model.eval()
     criterion = nn.NLLLoss()
     test_loss = 0

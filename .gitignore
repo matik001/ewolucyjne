@@ -3,6 +3,9 @@ data
 mnist_model.pth
 wandb
 todo.txt
+playground.py
+output.txt
+images/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
