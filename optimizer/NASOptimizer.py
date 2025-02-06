@@ -121,6 +121,7 @@ class NASOptimizer:
     def train_and_evaluate_chromosome(self,
                                       chromosome: Chromosome,
                                       train_loader: DataLoader,
+                                      val_loader: DataLoader,
                                       test_loader: DataLoader,
                                       generation: int,
                                       chromosome_id: int,
@@ -204,41 +205,41 @@ class NASOptimizer:
 
                     # Ewaluacja
                     model.eval()
-                    test_loss = 0
+                    validation_loss = 0
                     correct = 0
                     total = 0
 
                     with torch.no_grad():
-                        for inputs, targets in test_loader:
+                        for inputs, targets in val_loader:
                             inputs, targets = inputs.to(device), targets.to(device)
                             outputs = model(inputs)
                             loss = criterion(outputs, targets)
 
-                            test_loss += loss.item()
+                            validation_loss += loss.item()
                             _, predicted = outputs.max(1)
                             total += targets.size(0)
                             correct += predicted.eq(targets).sum().item()
 
                     epoch_train_loss = train_loss / len(train_loader)
-                    epoch_test_loss = test_loss / len(test_loader)
-                    epoch_test_acc = 100. * correct / total
+                    epoch_validation_loss = validation_loss / len(test_loader)
+                    epoch_validation_acc = 100. * correct / total
 
                     run.log({
                         f"train/epoch_loss": epoch_train_loss,
-                        f"test/epoch_loss": epoch_test_loss,
-                        f"test/accuracy": epoch_test_acc,
+                        f"validation/epoch_loss": epoch_validation_loss,
+                        f"validation/accuracy": epoch_validation_acc,
                         "epoch": epoch
                     })
-                    print(f"Evaluation, Epoch: {epoch}, Train Loss: {epoch_train_loss}, Test Loss: {epoch_test_loss}, Test Accuracy: {epoch_test_acc}")
+                    print(f"Validation, Epoch: {epoch}, Train Loss: {epoch_train_loss}, Validation Loss: {epoch_validation_loss}, Validation Accuracy: {epoch_validation_acc}")
 
-                return epoch_test_acc
+                return epoch_validation_acc
 
         except Exception as e:
             print(f"Error in training chromosome {chromosome_id}: {str(e)}")
             run.log({f"chromosome_{chromosome_id}/error": str(e)})
             return 0.0
 
-    def optimize(self, train_loader: DataLoader, test_loader: DataLoader, device: str = 'cuda') -> Chromosome:
+    def optimize(self, train_loader: DataLoader, val_loader : DataLoader, test_loader: DataLoader, device: str = 'cuda') -> Chromosome:
         """
         Główna pętla optymalizacji.
 
@@ -262,7 +263,7 @@ class NASOptimizer:
                 print(f"\nEvaluating chromosome {i + 1}/{self.population_size}")
 
                 fitness = self.train_and_evaluate_chromosome(
-                    chromosome, train_loader, test_loader,
+                    chromosome, train_loader, val_loader, test_loader,
                     generation, i, device
                 )
                 fitness_scores.append(fitness)
