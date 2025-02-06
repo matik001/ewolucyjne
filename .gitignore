@@ -2,6 +2,7 @@ data
 .idea
 mnist_model.pth
 wandb
+todo.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

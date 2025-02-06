@@ -144,6 +144,8 @@ class NASOptimizer:
             with wandb.init(
                     project=self.project_name,
                     name=f"NAS_optimization_MNIST({generation} - {chromosome_id})",
+                    mode="disabled",
+                    entity="matik001",
                     config={
                         "input_shape": self.input_shape,
                         "num_classes": self.num_classes,
@@ -198,6 +200,7 @@ class NASOptimizer:
                                 "epoch": epoch,
                                 "batch": batch_idx
                             })
+                            # print(f"Training, Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss.item()}, Accuracy: {100. * correct / total}")
 
                     # Ewaluacja
                     model.eval()
@@ -226,6 +229,7 @@ class NASOptimizer:
                         f"test/accuracy": epoch_test_acc,
                         "epoch": epoch
                     })
+                    print(f"Evaluation, Epoch: {epoch}, Train Loss: {epoch_train_loss}, Test Loss: {epoch_test_loss}, Test Accuracy: {epoch_test_acc}")
 
                 return epoch_test_acc
 
