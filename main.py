@@ -14,7 +14,6 @@ from training_utils import eval_model, train_model
 
 def run_optimizer(device="cuda"):
     train_loader, val_loader, test_loader = get_mnist_loaders(False)
-    # train_loader, test_loader, val_loader = get_mnist_loaders(False)
 
     # nas = NASOptimizer(
     #     input_shape=(1, 28, 28),  # MNIST format
@@ -26,12 +25,11 @@ def run_optimizer(device="cuda"):
     #     project_name="MNIST-NAS",
     #     epoch=5
     # )
-    print(len(test_loader))
     epoch = 2
     nas = NASOptimizer(
         input_shape=(1, 28, 28),  # MNIST format
         num_classes=10,
-        population_size=1,
+        population_size=2,
         num_generations=3,
         mutation_rate=0.3,
         elite_size=2,
@@ -46,7 +44,7 @@ def run_optimizer(device="cuda"):
     print(best_network)
     model = best_network.to_nn_module().to(device)
     train_model(model, train_loader, epoch, device)
-    eval_model(model, test_loader, device)
+    eval_model(model, test_loader, device, "Test")
 
 def main(device="cuda"):
     run_optimizer(device)

@@ -2,9 +2,7 @@ import random
 from typing import List, Tuple
 import copy
 
-import torch
-from torch import nn, optim
-from torch.utils.data import DataLoader
+from torch import nn
 
 from optimizer.Layers import Layer, LinearLayer, Conv2dLayer, MaxPool2dLayer, DropoutLayer, ReluLayer
 

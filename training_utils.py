@@ -1,16 +1,15 @@
 import torch
-from torch import nn
-import torch.nn.functional as F
 import wandb
-from torch import nn, optim
-from torch.utils.data import DataLoader
+
+from optimizer.Chromosome import Chromosome
+
 import traceback
 
 
 
-def eval_model(model, data_loader, device, mode = "Test"):
+def eval_model(model, data_loader, device, mode):
     model.eval()
-    criterion = nn.NLLLoss()
+    criterion = torch.nn.NLLLoss()
     test_loss = 0
     correct = 0
     total = 0
@@ -77,8 +76,8 @@ def train_model(model, train_loader, epochs, device: str = "cuda"):
                     
             #     })
 
-                optimizer = optim.Adam(model.parameters(), lr=0.001)
-                criterion = nn.NLLLoss()
+                optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+                criterion = torch.nn.NLLLoss()
 
                 total_params = sum(p.numel() for p in model.parameters())
                 # run.log({
@@ -132,108 +131,16 @@ def train_model(model, train_loader, epochs, device: str = "cuda"):
             # run.log({f"chromosome_{chromosome_id}/error": str(e)})
             return 0.0
 
-def train_and_evaluate_chromosome(    model: nn.Module,
-                                      train_loader: DataLoader,
-                                      val_loader: DataLoader,
-                                      test_loader: DataLoader,
-                                      epochs: int,
-                                      generation: int = 0,
-                                      chromosome_id: int = 0,
-                                      device: str = 'cuda') -> float:
-        """
-        Trenuje i ocenia pojedynczy chromosom.
+def save_best_model(chromosome: Chromosome, path: str):
+    """
+    Zapisuje najlepszy model do pliku.
 
-        Args:
-            chromosome: Chromosom do wytrenowania
-            train_loader: DataLoader z danymi treningowymi
-            test_loader: DataLoader z danymi testowymi
-            generation: Numer aktualnej generacji
-            chromosome_id: ID chromosomu w populacji
-            run: Obiekt wandb.Run do logowania
-            device: Urządzenie do wykonywania obliczeń
-
-        Returns:
-            float: Wartość fitness (dokładność na zbiorze testowym)
-        """
-        try:
-            # with wandb.init(
-            #         project=self.project_name,
-            #         name=f"NAS_optimization_MNIST({generation} - {chromosome_id})",
-            #         mode="disabled",
-            #         entity="matik001",
-            #         config={
-            #             "input_shape": self.input_shape,
-            #             "num_classes": self.num_classes,
-            #             "population_size": self.population_size,
-            #             "num_generations": self.num_generations,
-            #             "mutation_rate": self.mutation_rate,
-            #             "elite_size": self.elite_size,
-            #             "generation": generation,
-            #             "chromosome_id": chromosome_id
-            #         },
-            # ) as run:
-            #     a = 5
-
-            #     run.log({
-            #         # "architecture": str(chromosome)
-                    
-            #     })
-
-                optimizer = optim.Adam(model.parameters(), lr=0.001)
-                criterion = nn.NLLLoss()
-
-                total_params = sum(p.numel() for p in model.parameters())
-                # run.log({
-                #     f"total_parameters": total_params,
-                #     f"num_layers": len(chromosome.layers)
-                # })
-
-                for epoch in range(epochs):
-                    # Trening
-                    model.train()
-                    train_loss = 0
-                    correct = 0
-                    total = 0
-                    for batch_idx, (inputs, targets) in enumerate(train_loader):
-                        inputs, targets = inputs.to(device), targets.to(device)
-                        optimizer.zero_grad()
-
-                        outputs = model(inputs)
-                        loss = criterion(outputs, targets)
-                        loss.backward()
-                        optimizer.step()
-
-                        train_loss += loss.item()
-                        _, predicted = outputs.max(1)
-                        total += targets.size(0)
-                        correct += predicted.eq(targets).sum().item()
-
-                        # if batch_idx % 100 == 0:
-                            # run.log({
-                            #     f"train/batch_loss": loss.item(),
-                            #     f"train/batch_accuracy": 100. * correct / total,
-                            #     "epoch": epoch,
-                            #     "batch": batch_idx
-                            # })
-                            # print(f"Training, Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss.item()}, Accuracy: {100. * correct / total}")
-
-                    # Ewaluacja
-                    model.eval()
-
-                    epoch_train_loss = train_loss / len(train_loader)
-                    epoch_validation_loss, epoch_validation_acc = eval_model(model, val_loader, device, "validation")
-                    # run.log({
-                    #     f"train/epoch_loss": epoch_train_loss,
-                    #     f"validation/epoch_loss": epoch_validation_loss,
-                    #     f"validation/accuracy": epoch_validation_acc,
-                    #     "epoch": epoch
-                    # })
-
-                return epoch_validation_acc
-
-        except Exception as e:
-            print(f"Error in training chromosome {chromosome_id}: {str(e)}")
-            traceback.print_exc()
-            # run.log({f"chromosome_{chromosome_id}/error": str(e)})
-            return 0.0
-
+    Args:
+        chromosome: Chromosom do zapisania
+        path: Ścieżka do pliku
+    """
+    model = chromosome.to_nn_module()
+    torch.save({
+        'state_dict': model.state_dict(),
+        'architecture': str(chromosome)
+    }, path)

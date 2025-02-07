@@ -1,11 +1,9 @@
 import random
 from typing import List, Tuple
 import copy
-import numpy as np
 import wandb
 
 import torch
-from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from optimizer.Chromosome import Chromosome
@@ -182,16 +180,4 @@ class NASOptimizer:
         return self.best_chromosome
 
 
-def save_best_model(chromosome: Chromosome, path: str):
-    """
-    Zapisuje najlepszy model do pliku.
 
-    Args:
-        chromosome: Chromosom do zapisania
-        path: Ścieżka do pliku
-    """
-    model = chromosome.to_nn_module()
-    torch.save({
-        'state_dict': model.state_dict(),
-        'architecture': str(chromosome)
-    }, path)
