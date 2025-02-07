@@ -341,158 +341,158 @@ class Chromosome:
         layers.append(nn.LogSoftmax(dim=1))
         return nn.Sequential(*layers)
 
-    def train(
-            self,
-            train_loader: DataLoader,
-            learning_rate: float = 0.001,
-            num_epochs: int = 10,
-            device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    ) -> nn.Module:
-        """
-        Trenuje model i zwraca wytrenowany moduł PyTorch.
+    # def train(
+    #         self,
+    #         train_loader: DataLoader,
+    #         learning_rate: float = 0.001,
+    #         num_epochs: int = 10,
+    #         device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # ) -> nn.Module:
+    #     """
+    #     Trenuje model i zwraca wytrenowany moduł PyTorch.
 
-        Args:
-            train_loader: DataLoader z danymi treningowymi
-            learning_rate: współczynnik uczenia
-            num_epochs: liczba epok treningu
-            device: urządzenie na którym trenować (cuda/cpu)
+    #     Args:
+    #         train_loader: DataLoader z danymi treningowymi
+    #         learning_rate: współczynnik uczenia
+    #         num_epochs: liczba epok treningu
+    #         device: urządzenie na którym trenować (cuda/cpu)
 
-        Returns:
-            Wytrenowany model PyTorch
-        """
-        model = self.to_nn_module()
-        model = model.to(device)
-        model.train()
-        print(model)
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-        criterion = nn.NLLLoss()
+    #     Returns:
+    #         Wytrenowany model PyTorch
+    #     """
+    #     model = self.to_nn_module()
+    #     model = model.to(device)
+    #     model.train()
+    #     print(model)
+    #     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    #     criterion = nn.NLLLoss()
 
-        for epoch in range(num_epochs):
-            running_loss = 0.0
-            correct = 0
-            total = 0
+    #     for epoch in range(num_epochs):
+    #         running_loss = 0.0
+    #         correct = 0
+    #         total = 0
 
-            for batch_idx, (inputs, targets) in enumerate(train_loader):
-                inputs, targets = inputs.to(device), targets.to(device)
+    #         for batch_idx, (inputs, targets) in enumerate(train_loader):
+    #             inputs, targets = inputs.to(device), targets.to(device)
 
-                # Zerowanie gradientów
-                optimizer.zero_grad()
+    #             # Zerowanie gradientów
+    #             optimizer.zero_grad()
 
-                try:
-                    # Forward pass
-                    outputs = model(inputs)
-                    loss = criterion(outputs, targets)
+    #             try:
+    #                 # Forward pass
+    #                 outputs = model(inputs)
+    #                 loss = criterion(outputs, targets)
 
-                    # Backward pass i optymalizacja
-                    loss.backward()
-                    optimizer.step()
+    #                 # Backward pass i optymalizacja
+    #                 loss.backward()
+    #                 optimizer.step()
 
-                    # Statystyki
-                    running_loss += loss.item()
-                    _, predicted = outputs.max(1)
-                    total += targets.size(0)
-                    correct += predicted.eq(targets).sum().item()
+    #                 # Statystyki
+    #                 running_loss += loss.item()
+    #                 _, predicted = outputs.max(1)
+    #                 total += targets.size(0)
+    #                 correct += predicted.eq(targets).sum().item()
 
-                    # Wyświetl postęp co 100 batchy
-                    if (batch_idx + 1) % 100 == 0:
-                        print(f'Epoch: {epoch + 1}/{num_epochs} | '
-                              f'Batch: {batch_idx + 1}/{len(train_loader)} | '
-                              f'Loss: {running_loss / (batch_idx + 1):.3f} | '
-                              f'Acc: {100. * correct / total:.2f}%')
+    #                 # Wyświetl postęp co 100 batchy
+    #                 if (batch_idx + 1) % 100 == 0:
+    #                     print(f'Epoch: {epoch + 1}/{num_epochs} | '
+    #                           f'Batch: {batch_idx + 1}/{len(train_loader)} | '
+    #                           f'Loss: {running_loss / (batch_idx + 1):.3f} | '
+    #                           f'Acc: {100. * correct / total:.2f}%')
 
-                except Exception as e:
-                    print(f"Błąd podczas treningu w epoce {epoch + 1}, batch {batch_idx + 1}: {str(e)}")
-                    return None
+    #             except Exception as e:
+    #                 print(f"Błąd podczas treningu w epoce {epoch + 1}, batch {batch_idx + 1}: {str(e)}")
+    #                 return None
 
-            # Statystyki na koniec epoki
-            epoch_loss = running_loss / len(train_loader)
-            epoch_acc = 100. * correct / total
-            print(f'Epoch {epoch + 1} finished | Loss: {epoch_loss:.3f} | Acc: {epoch_acc:.2f}%')
+    #         # Statystyki na koniec epoki
+    #         epoch_loss = running_loss / len(train_loader)
+    #         epoch_acc = 100. * correct / total
+    #         print(f'Epoch {epoch + 1} finished | Loss: {epoch_loss:.3f} | Acc: {epoch_acc:.2f}%')
 
-        return model
+    #     return model
 
-    def eval(
-            self,
-            model: nn.Module,
-            test_loader: DataLoader,
-            device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    ) -> Tuple[float, float]:
-        """
-        Ocenia wytrenowany model na zbiorze testowym.
+    # def eval(
+    #         self,
+    #         model: nn.Module,
+    #         test_loader: DataLoader,
+    #         device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # ) -> Tuple[float, float]:
+    #     """
+    #     Ocenia wytrenowany model na zbiorze testowym.
 
-        Args:
-            model: wytrenowany model PyTorch
-            test_loader: DataLoader z danymi testowymi
-            device: urządzenie na którym wykonać ewaluację
+    #     Args:
+    #         model: wytrenowany model PyTorch
+    #         test_loader: DataLoader z danymi testowymi
+    #         device: urządzenie na którym wykonać ewaluację
 
-        Returns:
-            Tuple (accuracy, loss)
-        """
-        if model is None:
-            return 0.0, float('inf')
+    #     Returns:
+    #         Tuple (accuracy, loss)
+    #     """
+    #     if model is None:
+    #         return 0.0, float('inf')
 
-        model = model.to(device)
-        model.eval()
+    #     model = model.to(device)
+    #     model.eval()
 
-        total_loss = 0
-        correct = 0
-        total = 0
+    #     total_loss = 0
+    #     correct = 0
+    #     total = 0
 
-        criterion = nn.NLLLoss()
+    #     criterion = nn.NLLLoss()
 
-        with torch.no_grad():
-            for inputs, targets in test_loader:
-                inputs, targets = inputs.to(device), targets.to(device)
+    #     with torch.no_grad():
+    #         for inputs, targets in test_loader:
+    #             inputs, targets = inputs.to(device), targets.to(device)
 
-                try:
-                    outputs = model(inputs)
-                    loss = criterion(outputs, targets)
+    #             try:
+    #                 outputs = model(inputs)
+    #                 loss = criterion(outputs, targets)
 
-                    total_loss += loss.item()
-                    _, predicted = outputs.max(1)
-                    total += targets.size(0)
-                    correct += predicted.eq(targets).sum().item()
+    #                 total_loss += loss.item()
+    #                 _, predicted = outputs.max(1)
+    #                 total += targets.size(0)
+    #                 correct += predicted.eq(targets).sum().item()
 
-                except Exception as e:
-                    print(f"Błąd podczas ewaluacji: {str(e)}")
-                    return 0.0, float('inf')
+    #             except Exception as e:
+    #                 print(f"Błąd podczas ewaluacji: {str(e)}")
+    #                 return 0.0, float('inf')
 
-        accuracy = 100. * correct / total
-        avg_loss = total_loss / len(test_loader)
+    #     accuracy = 100. * correct / total
+    #     avg_loss = total_loss / len(test_loader)
 
-        return accuracy, avg_loss
+    #     return accuracy, avg_loss
 
-    def get_fitness(
-            self,
-            train_loader: DataLoader,
-            test_loader: DataLoader,
-            learning_rate: float = 0.001,
-            num_epochs: int = 10,
-            device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    ) -> float:
-        """
-        Trenuje model i zwraca jego fitness na podstawie wyników na zbiorze testowym.
+    # def get_fitness(
+    #         self,
+    #         train_loader: DataLoader,
+    #         test_loader: DataLoader,
+    #         learning_rate: float = 0.001,
+    #         num_epochs: int = 10,
+    #         device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # ) -> float:
+    #     """
+    #     Trenuje model i zwraca jego fitness na podstawie wyników na zbiorze testowym.
 
-        Args:
-            train_loader: DataLoader z danymi treningowymi
-            test_loader: DataLoader z danymi testowymi
-            learning_rate: współczynnik uczenia
-            num_epochs: liczba epok treningu
-            device: urządzenie na którym wykonać obliczenia
+    #     Args:
+    #         train_loader: DataLoader z danymi treningowymi
+    #         test_loader: DataLoader z danymi testowymi
+    #         learning_rate: współczynnik uczenia
+    #         num_epochs: liczba epok treningu
+    #         device: urządzenie na którym wykonać obliczenia
 
-        Returns:
-            Wartość fitness (wyższa = lepsza)
-        """
-        trained_model = self.train(train_loader, learning_rate, num_epochs, device)
-        accuracy, loss = self.eval(trained_model, test_loader, device)
+    #     Returns:
+    #         Wartość fitness (wyższa = lepsza)
+    #     """
+    #     trained_model = self.train(train_loader, learning_rate, num_epochs, device)
+    #     accuracy, loss = self.eval(trained_model, test_loader, device)
 
-        scaled_loss = loss * 100
+    #     scaled_loss = loss * 100
 
-        accuracy_weight = 0.7
-        loss_weight = 0.3
+    #     accuracy_weight = 0.7
+    #     loss_weight = 0.3
 
-        fitness = (accuracy_weight * accuracy) - (loss_weight * scaled_loss)
+    #     fitness = (accuracy_weight * accuracy) - (loss_weight * scaled_loss)
 
-        print(f"Final Results - Accuracy: {accuracy:.2f}% | Loss: {loss:.4f} | Fitness: {fitness:.4f}")
+    #     print(f"Final Results - Accuracy: {accuracy:.2f}% | Loss: {loss:.4f} | Fitness: {fitness:.4f}")
 
-        return fitness
+    #     return fitness

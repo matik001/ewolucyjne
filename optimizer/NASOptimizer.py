@@ -8,9 +8,8 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
-from optimizer.Layers import Layer, LinearLayer, Conv2dLayer, MaxPool2dLayer, DropoutLayer, ReluLayer
 from optimizer.Chromosome import Chromosome
-from utils import eval_model
+from utils import eval_model, evaluate
 
 
 class NASOptimizer:
@@ -185,7 +184,6 @@ class NASOptimizer:
                     train_loss = 0
                     correct = 0
                     total = 0
-
                     for batch_idx, (inputs, targets) in enumerate(train_loader):
                         inputs, targets = inputs.to(device), targets.to(device)
                         optimizer.zero_grad()
@@ -231,7 +229,6 @@ class NASOptimizer:
 
                     epoch_train_loss = train_loss / len(train_loader)
                     epoch_validation_loss, epoch_validation_acc = eval_model(model, val_loader, device, "validation")
-                    print("!!!")
                     run.log({
                         f"train/epoch_loss": epoch_train_loss,
                         f"validation/epoch_loss": epoch_validation_loss,
@@ -245,6 +242,63 @@ class NASOptimizer:
             print(f"Error in training chromosome {chromosome_id}: {str(e)}")
             run.log({f"chromosome_{chromosome_id}/error": str(e)})
             return 0.0
+        
+    def train_and_evaluate_chromosome2(self,
+                                      chromosome: Chromosome,
+                                      train_loader: DataLoader,
+                                      val_loader: DataLoader,
+                                      test_loader: DataLoader,
+                                      generation: int,
+                                      chromosome_id: int,
+                                      device: str = 'cuda') -> float:
+        """
+        only for debug purposes
+        """
+        try:
+                model = chromosome.to_nn_module().to(device)
+
+                optimizer = optim.Adam(model.parameters(), lr=0.001)
+                criterion = nn.NLLLoss()
+
+                total_params = sum(p.numel() for p in model.parameters())
+
+                for epoch in range(self.epoch):
+                    # Trening
+                    model.train()
+                    train_loss = 0
+                    correct = 0
+                    total = 0
+                    for batch_idx, (inputs, targets) in enumerate(train_loader):
+                        inputs, targets = inputs.to(device), targets.to(device)
+                        optimizer.zero_grad()
+
+                        outputs = model(inputs)
+                        loss = criterion(outputs, targets)
+                        loss.backward()
+                        optimizer.step()
+
+                        # train_loss += loss.item()
+                        # _, predicted = outputs.max(1)
+                        # total += targets.size(0)
+                        # correct += predicted.eq(targets).sum().item()
+
+                            # print(f"Training, Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss.item()}, Accuracy: {100. * correct / total}")
+
+                    model.eval()
+                    epoch_train_loss = train_loss / len(train_loader)
+                    epoch_validation_loss, epoch_validation_acc = eval_model(model, val_loader, device, "validation2222222")
+                # model.eval()
+                epoch_validation_loss, epoch_validation_acc = eval_model(model, val_loader, device, "validation3333")
+                epoch_validation_loss, epoch_validation_acc = eval_model(model, test_loader, device, "test3333")
+
+
+                return epoch_validation_acc
+
+        except Exception as e:
+            print(f"Error in training chromosome {chromosome_id}: {str(e)}")
+            # run.log({f"chromosome_{chromosome_id}/error": str(e)})
+            return 0.0
+            
 
     def optimize(self, train_loader: DataLoader, val_loader : DataLoader, test_loader: DataLoader, device: str = 'cuda') -> Chromosome:
         """
@@ -296,7 +350,34 @@ class NASOptimizer:
 
             if generation < self.num_generations - 1:
                 self.create_next_generation(fitness_scores)
-                eval_model(self.best_chromosome.to_nn_module().to(device), test_loader, device, "test2")
+                self.train_and_evaluate_chromosome2(
+                    self.best_chromosome, train_loader, val_loader, test_loader,
+                    generation, 1, device
+                )
+                # eval_model(m, train_loader, device, "train mock")
+                # eval_model(m, val_loader, device, "validation mock")
+                # eval_model(m, test_loader, device, "test2")
+                # l, a = evaluate(m, test_loader, device)
+                # print(l, a, "EVALUATE loss, accuracy")
+                # validation_loss = 0
+                # correct = 0
+                # total = 0
+                # model = self.best_chromosome.to_nn_module().to(device)
+                # criterion = nn.NLLLoss()
+                # with torch.no_grad():
+                #     for inputs, targets in test_loader:
+                #         inputs, targets = inputs.to(device), targets.to(device)
+                #         outputs = model(inputs)
+                #         loss = criterion(outputs, targets)
+
+                #         validation_loss += loss.item()
+                #         _, predicted = outputs.max(1)
+                #         total += targets.size(0)
+                #         correct += predicted.eq(targets).sum().item()
+
+                # epoch_validation_loss = validation_loss / len(test_loader)
+                # epoch_validation_acc = 100. * correct / total
+                # print(f"New Test Loss: {epoch_validation_loss}, New Test Accuracy: {epoch_validation_acc}")
 
         # Logowanie końcowych wyników
         # run.log({

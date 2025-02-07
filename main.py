@@ -14,6 +14,7 @@ from utils import eval_model
 
 def run_optimizer(device="cuda"):
     train_loader, val_loader, test_loader = get_mnist_loaders(False)
+    # train_loader, test_loader, val_loader = get_mnist_loaders(False)
 
     # nas = NASOptimizer(
     #     input_shape=(1, 28, 28),  # MNIST format
@@ -29,13 +30,13 @@ def run_optimizer(device="cuda"):
     nas = NASOptimizer(
         input_shape=(1, 28, 28),  # MNIST format
         num_classes=10,
-        population_size=5,
+        population_size=1,
         num_generations=3,
         mutation_rate=0.3,
         elite_size=2,
         project_name="MNIST-NAS",
-        epoch=3,
-        min_layers=1,
+        epoch=2,
+        min_layers=2,
         max_layers=4
     )
 
@@ -52,4 +53,4 @@ def main(device="cuda"):
 if __name__ == "__main__":
     wandb.login()
 
-    main("cuda:1")
+    main("cuda")
