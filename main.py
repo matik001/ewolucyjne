@@ -4,7 +4,7 @@ from torch import nn, optim
 
 from optimizer.NASOptimizer import NASOptimizer
 from data_loaders import get_mnist_loaders, get_mnist_loaders_prev
-from utils import eval_model
+from utils import eval_model, train_and_evaluate_chromosome
 
 # import sys
 
@@ -27,6 +27,7 @@ def run_optimizer(device="cuda"):
     #     epoch=5
     # )
     print(len(test_loader))
+    epoch = 2
     nas = NASOptimizer(
         input_shape=(1, 28, 28),  # MNIST format
         num_classes=10,
@@ -36,7 +37,7 @@ def run_optimizer(device="cuda"):
         elite_size=2,
         project_name="MNIST-NAS",
         epoch=2,
-        min_layers=2,
+        min_layers=epoch,
         max_layers=4
     )
 
@@ -44,6 +45,7 @@ def run_optimizer(device="cuda"):
     print("\nNajlepsza znaleziona architektura:")
     print(best_network)
     model = best_network.to_nn_module().to(device)
+    train_and_evaluate_chromosome(model, train_loader, val_loader, test_loader, epoch, device)
     eval_model(model, test_loader, device)
 
 def main(device="cuda"):
