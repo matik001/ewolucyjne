@@ -6,6 +6,7 @@ todo.txt
 playground.py
 output.txt
 images/
+saved_models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

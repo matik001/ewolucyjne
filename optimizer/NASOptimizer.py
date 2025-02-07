@@ -7,8 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from optimizer.Chromosome import Chromosome
-from training_utils import eval_model, train_model
-
+from training_utils import eval_model, train_model, save_model
 
 class NASOptimizer:
     def __init__(self,
@@ -18,7 +17,7 @@ class NASOptimizer:
                  num_generations: int = 10,
                  mutation_rate: float = 0.3,
                  elite_size: int = 2,
-                 project_name: str = "NAS-Optimization",
+                 project_name: str = "NAS",
                  group_name: str = "MNIST",
                  epoch: int = 2,
                  min_layers: int = 2,
@@ -123,7 +122,7 @@ class NASOptimizer:
 
         self.population = new_population
             
-    def optimize(self, train_loader: DataLoader, val_loader : DataLoader, device: str = 'cuda') -> Chromosome:
+    def optimize(self, train_loader: DataLoader, val_loader : DataLoader, save_initial = False, save_medium = False, device: str = 'cuda') -> Chromosome:
         """
         Główna pętla optymalizacji.
 
@@ -135,18 +134,21 @@ class NASOptimizer:
         Returns:
             Chromosome: Najlepszy znaleziony chromosom
         """
-
         print("Initializing population...")
         self.initialize_population()
 
+        if save_initial:
+            save_model(self.population[0], f"saved_models/{self.group_name}_initial.pth")
+
         for generation in range(self.num_generations):
             print(f"\nGeneration {generation + 1}/{self.num_generations}")
-
+            if save_medium and generation == self.num_generations // 2 + 1:
+                save_model(self.population[0], f"saved_models/{self.group_name}_medium.pth")
             fitness_scores = []
             for i, chromosome in enumerate(self.population):
                 print(f"\nEvaluating chromosome {i + 1}/{self.population_size}")
                 model = chromosome.to_nn_module().to(device)
-                run =  wandb.init(project=self.project_name, group=self.group_name, name=f"{self.project_name}_{self.group_name}({generation} - {i})")
+                run =  wandb.init(project=self.project_name, group=self.group_name, name=f"{self.project_name}_{self.group_name}({generation} - {i})", tags=[self.group_name])
                 run.config.update({
                     "input_shape": self.input_shape,
                     "num_classes": self.num_classes,
@@ -173,12 +175,6 @@ class NASOptimizer:
 
             if generation < self.num_generations - 1:
                 self.create_next_generation(fitness_scores)
-
-        # Logowanie końcowych wyników
-        # run.log({
-        #     "final_best_fitness": self.best_fitness,
-        #     "final_architecture": wandb.Html(str(self.best_chromosome))
-        # })
 
         return self.best_chromosome
 

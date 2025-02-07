@@ -93,7 +93,7 @@ def train_model(model, train_loader, epochs, run, device: str = "cuda"):
             # run.log({f"chromosome_{chromosome_id}/error": str(e)})
             return 0.0
 
-def save_best_model(chromosome: Chromosome, path: str):
+def save_model(chromosome: Chromosome, path: str):
     """
     Zapisuje najlepszy model do pliku.
 
@@ -102,7 +102,16 @@ def save_best_model(chromosome: Chromosome, path: str):
         path: Ścieżka do pliku
     """
     model = chromosome.to_nn_module()
-    torch.save({
-        'state_dict': model.state_dict(),
-        'architecture': str(chromosome)
-    }, path)
+    torch.save(model, path)
+
+def get_dataloader_info(dataloader):
+    dataset = dataloader.dataset  # Get dataset from DataLoader
+    inputs, labels = next(iter(dataloader))
+    input_shape = inputs.shape[1:]  # (C, H, W) for images
+    if hasattr(dataset, "classes"):  
+        num_classes = len(dataset.classes)  # Works for standard datasets like CIFAR-10, MNIST
+    elif hasattr(dataset, "dataset") and hasattr(dataset.dataset, "classes"):  
+        num_classes = len(dataset.dataset.classes)  # Handle Subset datasets
+    else:
+        num_classes = len(set(dataset.targets.numpy())) if hasattr(dataset, "targets") else len(set(dataset.labels))
+    return input_shape, num_classes
