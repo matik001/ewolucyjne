@@ -25,26 +25,54 @@ def run_optimizer(device="cuda"):
     #     project_name="MNIST-NAS",
     #     epoch=5
     # )
+    input_shape = (1, 28, 28)
+    num_classes = 10
+    population_size = 2
+    num_generations = 3
+    mutation_rate = 0.3
+    elite_size = 2
+    project_name = "NAS"
+    group_name = "MNIST"
     epoch = 2
+    min_layers = 2
+    max_layers = 4
     nas = NASOptimizer(
-        input_shape=(1, 28, 28),  # MNIST format
-        num_classes=10,
-        population_size=2,
-        num_generations=3,
-        mutation_rate=0.3,
-        elite_size=2,
-        project_name="MNIST-NAS",
-        epoch=2,
-        min_layers=epoch,
-        max_layers=4
+        input_shape=input_shape,  # MNIST format
+        num_classes=num_classes,
+        population_size=population_size,
+        num_generations=num_generations,
+        mutation_rate=mutation_rate,
+        elite_size=elite_size,
+        project_name=project_name,
+        group_name=group_name,
+        epoch=epoch,
+        min_layers=min_layers,
+        max_layers=max_layers
     )
 
-    best_network = nas.optimize(train_loader, val_loader, test_loader, device)
+    best_chromosome = nas.optimize(train_loader, val_loader, device)
     print("\nNajlepsza znaleziona architektura:")
-    print(best_network)
-    model = best_network.to_nn_module().to(device)
-    train_model(model, train_loader, epoch, device)
-    eval_model(model, test_loader, device, "Test")
+    print(best_chromosome)
+    model = best_chromosome.to_nn_module().to(device)
+    run =  wandb.init(project=project_name, group=group_name, name=f"{project_name}_{group_name}_FINAL", tags=[ group_name])
+    run.config.update({
+        "input_shape": input_shape,
+        "num_classes": num_classes,
+        "population_size": population_size,
+        "num_generations": num_generations,
+        "mutation_rate": mutation_rate,
+        "elite_size": elite_size,
+        "generation": num_generations,
+        "chromosome_id": 777,
+    })
+    run.log({
+        "architecture": str(best_chromosome),
+        f"total_parameters": sum(p.numel() for p in model.parameters()),
+        f"num_layers": len(best_chromosome.layers)
+    })
+    train_model(model, train_loader, epoch, run, device)
+    eval_model(model, test_loader, run,  device, "Test")
+    run.finish()
 
 def main(device="cuda"):
     run_optimizer(device)

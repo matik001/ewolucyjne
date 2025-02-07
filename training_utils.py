@@ -7,10 +7,10 @@ import traceback
 
 
 
-def eval_model(model, data_loader, device, mode):
+def eval_model(model, data_loader, run, device, mode):
     model.eval()
     criterion = torch.nn.NLLLoss()
-    test_loss = 0
+    loss = 0
     correct = 0
     total = 0
 
@@ -19,25 +19,21 @@ def eval_model(model, data_loader, device, mode):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
-            # loss.backward()
-                        # optimizer.step()
-
-            test_loss += loss.item()
+            loss += loss.item()
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-        test_loss = test_loss / len(data_loader)
-        test_acc = 100. * correct / total
-
-        # run.log({
-        #     f"test/loss": test_loss,
-        #     f"test/accuracy": test_acc,
-        # })
-        print(f"{mode}, {mode} Loss: {test_loss}, {mode} Accuracy: {test_acc}%")
-        return test_loss, test_acc
+        loss /= len(data_loader)
+        acc = 100. * correct / total
+        run.log({
+            f"{mode}/loss": loss,
+            f"{mode}/accuracy": acc,
+        })
+        print(f"{mode}, {mode} Loss: {loss}, {mode} Accuracy: {acc}%")
+        return loss, acc
     
-def train_model(model, train_loader, epochs, device: str = "cuda"):
+def train_model(model, train_loader, epochs, run, device: str = "cuda"):
         """
         Trenuje model.
 
@@ -53,77 +49,43 @@ def train_model(model, train_loader, epochs, device: str = "cuda"):
             float: Wartość fitness (dokładność na zbiorze testowym)
         """
         try:
-            # with wandb.init(
-            #         project=self.project_name,
-            #         name=f"NAS_optimization_MNIST({generation} - {chromosome_id})",
-            #         mode="disabled",
-            #         entity="matik001",
-            #         config={
-            #             "input_shape": self.input_shape,
-            #             "num_classes": self.num_classes,
-            #             "population_size": self.population_size,
-            #             "num_generations": self.num_generations,
-            #             "mutation_rate": self.mutation_rate,
-            #             "elite_size": self.elite_size,
-            #             "generation": generation,
-            #             "chromosome_id": chromosome_id
-            #         },
-            # ) as run:
-            #     a = 5
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+            criterion = torch.nn.NLLLoss()
+            for epoch in range(epochs):
+                # Trening
+                model.train()
+                train_loss = 0
+                correct = 0
+                total = 0
+                for batch_idx, (inputs, targets) in enumerate(train_loader):
+                    inputs, targets = inputs.to(device), targets.to(device)
+                    optimizer.zero_grad()
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                    loss.backward()
+                    optimizer.step()
+                    train_loss += loss.item()
+                    _, predicted = outputs.max(1)
+                    total += targets.size(0)
+                    correct += predicted.eq(targets).sum().item()
 
-            #     run.log({
-            #         # "architecture": str(chromosome)
-                    
-            #     })
+                    if batch_idx % 100 == 0:
+                        run.log({
+                            f"train/batch_loss": loss.item(),
+                            f"train/batch_accuracy": 100. * correct / total,
+                            "epoch": epoch,
+                            "batch": batch_idx
+                        })
 
-                optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-                criterion = torch.nn.NLLLoss()
+                epoch_train_loss = train_loss / len(train_loader)
+                epoch_train_acc = 100. * correct / total
+                run.log({
+                    f"train/epoch_loss": epoch_train_loss,
+                    f"train/epoch_acc": epoch_train_acc,
+                    "epoch": epoch
+                })
 
-                total_params = sum(p.numel() for p in model.parameters())
-                # run.log({
-                #     f"total_parameters": total_params,
-                #     f"num_layers": len(chromosome.layers)
-                # })
-
-                for epoch in range(epochs):
-                    # Trening
-                    model.train()
-                    train_loss = 0
-                    correct = 0
-                    total = 0
-                    for batch_idx, (inputs, targets) in enumerate(train_loader):
-                        inputs, targets = inputs.to(device), targets.to(device)
-                        optimizer.zero_grad()
-
-                        outputs = model(inputs)
-                        loss = criterion(outputs, targets)
-                        loss.backward()
-                        optimizer.step()
-
-                        train_loss += loss.item()
-                        _, predicted = outputs.max(1)
-                        total += targets.size(0)
-                        correct += predicted.eq(targets).sum().item()
-
-                        # if batch_idx % 100 == 0:
-                            # run.log({
-                            #     f"train/batch_loss": loss.item(),
-                            #     f"train/batch_accuracy": 100. * correct / total,
-                            #     "epoch": epoch,
-                            #     "batch": batch_idx
-                            # })
-                            # print(f"Training, Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss.item()}, Accuracy: {100. * correct / total}")
-
-                    epoch_train_loss = train_loss / len(train_loader)
-                    epoch_train_acc = 100. * correct / total
-                    # run.log({
-                    #     f"train/epoch_loss": epoch_train_loss,
-                    #     f"validation/epoch_loss": epoch_validation_loss,
-                    #     f"validation/accuracy": epoch_validation_acc,
-                    #     "epoch": epoch
-                    # })
-
-                return epoch_train_loss, epoch_train_acc
+            return epoch_train_loss, epoch_train_acc
 
         except Exception as e:
             print(f"Error in training: {str(e)}")

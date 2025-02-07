@@ -19,6 +19,7 @@ class NASOptimizer:
                  mutation_rate: float = 0.3,
                  elite_size: int = 2,
                  project_name: str = "NAS-Optimization",
+                 group_name: str = "MNIST",
                  epoch: int = 2,
                  min_layers: int = 2,
                  max_layers: int = 3
@@ -45,6 +46,7 @@ class NASOptimizer:
         self.best_fitness = float('-inf')
         self.best_chromosome = None
         self.project_name = project_name
+        self.group_name = group_name
         self.epoch = epoch
         self.min_layers = min_layers
         self.max_layers = max_layers
@@ -121,13 +123,13 @@ class NASOptimizer:
 
         self.population = new_population
             
-    def optimize(self, train_loader: DataLoader, val_loader : DataLoader, test_loader: DataLoader, device: str = 'cuda') -> Chromosome:
+    def optimize(self, train_loader: DataLoader, val_loader : DataLoader, device: str = 'cuda') -> Chromosome:
         """
         Główna pętla optymalizacji.
 
         Args:
             train_loader: DataLoader z danymi treningowymi
-            test_loader: DataLoader z danymi testowymi
+            val_loader: DataLoader z danymi walidycyjnymi
             device: Urządzenie do wykonywania obliczeń
 
         Returns:
@@ -144,29 +146,30 @@ class NASOptimizer:
             for i, chromosome in enumerate(self.population):
                 print(f"\nEvaluating chromosome {i + 1}/{self.population_size}")
                 model = chromosome.to_nn_module().to(device)
-                training_loss, training_acc = train_model(model, train_loader,self.epoch, device)
+                run =  wandb.init(project=self.project_name, group=self.group_name, name=f"{self.project_name}_{self.group_name}({generation} - {i})")
+                run.config.update({
+                    "input_shape": self.input_shape,
+                    "num_classes": self.num_classes,
+                    "population_size": self.population_size,
+                    "num_generations": self.num_generations,
+                    "mutation_rate": self.mutation_rate,
+                    "elite_size": self.elite_size,
+                    "generation": generation,
+                    "chromosome_id": i,
+                })
+                run.log({
+                    "architecture": str(chromosome),
+                    f"total_parameters": sum(p.numel() for p in model.parameters()),
+                    f"num_layers": len(chromosome.layers)
+                })
+                training_loss, training_acc = train_model(model, train_loader,self.epoch, run, device)
                 print(f"Training loss: {training_loss}, Training accuracy: {training_acc}")
-                _, fitness = eval_model(model, val_loader, device, "Validation")
+                _, fitness = eval_model(model, val_loader, run, device, "Validation")
                 fitness_scores.append(fitness)
-
                 if fitness > self.best_fitness:
                     self.best_fitness = fitness
                     self.best_chromosome = copy.deepcopy(chromosome)
-                    # run.log({
-                    #     "best_fitness": self.best_fitness,
-                    #     "best_generation": generation,
-                    #     "best_chromosome": i,
-                    #     "best_architecture": wandb.Html(str(chromosome))
-                    # })
-
-            # Logowanie statystyk generacji
-            # run.log({
-            #     "generation": generation,
-            #     "mean_fitness": np.mean(fitness_scores),
-            #     "max_fitness": max(fitness_scores),
-            #     "min_fitness": min(fitness_scores),
-            #     "fitness_std": np.std(fitness_scores),
-            # })
+                run.finish()
 
             if generation < self.num_generations - 1:
                 self.create_next_generation(fitness_scores)
