@@ -9,7 +9,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from optimizer.Chromosome import Chromosome
-from utils import eval_model, train_and_evaluate_chromosome
+from training_utils import eval_model, train_model
 
 
 class NASOptimizer:
@@ -146,10 +146,9 @@ class NASOptimizer:
             for i, chromosome in enumerate(self.population):
                 print(f"\nEvaluating chromosome {i + 1}/{self.population_size}")
                 model = chromosome.to_nn_module().to(device)
-                fitness = train_and_evaluate_chromosome(
-                    model, train_loader, val_loader, test_loader, self.epoch,
-                    generation, i, device
-                )
+                training_loss, training_acc = train_model(model, train_loader,self.epoch, device)
+                print(f"Training loss: {training_loss}, Training accuracy: {training_acc}")
+                _, fitness = eval_model(model, val_loader, device, "Validation")
                 fitness_scores.append(fitness)
 
                 if fitness > self.best_fitness:
@@ -173,30 +172,6 @@ class NASOptimizer:
 
             if generation < self.num_generations - 1:
                 self.create_next_generation(fitness_scores)
-                # eval_model(m, train_loader, device, "train mock")
-                # eval_model(m, val_loader, device, "validation mock")
-                # eval_model(m, test_loader, device, "test2")
-                # l, a = evaluate(m, test_loader, device)
-                # print(l, a, "EVALUATE loss, accuracy")
-                # validation_loss = 0
-                # correct = 0
-                # total = 0
-                # model = self.best_chromosome.to_nn_module().to(device)
-                # criterion = nn.NLLLoss()
-                # with torch.no_grad():
-                #     for inputs, targets in test_loader:
-                #         inputs, targets = inputs.to(device), targets.to(device)
-                #         outputs = model(inputs)
-                #         loss = criterion(outputs, targets)
-
-                #         validation_loss += loss.item()
-                #         _, predicted = outputs.max(1)
-                #         total += targets.size(0)
-                #         correct += predicted.eq(targets).sum().item()
-
-                # epoch_validation_loss = validation_loss / len(test_loader)
-                # epoch_validation_acc = 100. * correct / total
-                # print(f"New Test Loss: {epoch_validation_loss}, New Test Accuracy: {epoch_validation_acc}")
 
         # Logowanie końcowych wyników
         # run.log({
