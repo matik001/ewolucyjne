@@ -34,7 +34,7 @@ def run_optimizer(dataset = "MNIST", device="cuda"):
     #     epoch=5
     # )
     input_shape, num_classes = get_dataloader_info(test_loader)
-    population_size = 2
+    population_size = 10
     num_generations = 3
     mutation_rate = 0.3
     elite_size = 2
@@ -61,6 +61,7 @@ def run_optimizer(dataset = "MNIST", device="cuda"):
     print("\nNajlepsza znaleziona architektura:")
     print(best_chromosome)
     model = best_chromosome.to_nn_module().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     chromosome_id = random.randint(1000, 9999)
     run =  wandb.init(project=project_name, group=group_name, name=f"{project_name}_{group_name}_FINAL_{chromosome_id}", tags=[ group_name, "FINAL"])
     run.config.update({
@@ -78,7 +79,7 @@ def run_optimizer(dataset = "MNIST", device="cuda"):
         f"total_parameters": sum(p.numel() for p in model.parameters()),
         f"num_layers": len(best_chromosome.layers)
     })
-    train_model(model, train_loader, epoch, run, device)
+    train_model(model, train_loader, epoch, run, optimizer, device)
     eval_model(model, val_loader, run, device, "Validation")
     eval_model(model, test_loader, run,  device, "Test")
     run.finish()

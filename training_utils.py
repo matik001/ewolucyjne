@@ -33,7 +33,7 @@ def eval_model(model, data_loader, run, device, mode):
         print(f"{mode}, {mode} Loss: {loss}, {mode} Accuracy: {acc}%")
         return loss, acc
     
-def train_model(model, train_loader, epochs, run, device: str = "cuda"):
+def train_model(model, train_loader, epochs, run, optimizer, device: str = "cuda"):
         """
         Trenuje model.
 
@@ -49,7 +49,6 @@ def train_model(model, train_loader, epochs, run, device: str = "cuda"):
             float: Wartość fitness (dokładność na zbiorze testowym)
         """
         try:
-            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
             criterion = torch.nn.NLLLoss()
             for epoch in range(epochs):
                 # Trening

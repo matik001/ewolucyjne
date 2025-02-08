@@ -2,7 +2,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 import torch
 
-def get_mnist_loaders(limit=False, val_split=0.1):
+def get_mnist_loaders(limit=False, val_split=0.1, batch_size=64):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
@@ -18,18 +18,18 @@ def get_mnist_loaders(limit=False, val_split=0.1):
 
     # Apply limit for debugging
     if limit:
-        train_dataset = torch.utils.data.Subset(train_dataset, list(range(64)))
-        val_dataset = torch.utils.data.Subset(val_dataset, list(range(64)))
-        test_dataset = torch.utils.data.Subset(test_dataset, list(range(64)))
+        train_dataset = torch.utils.data.Subset(train_dataset, list(range(batch_size)))
+        val_dataset = torch.utils.data.Subset(val_dataset, list(range(batch_size)))
+        test_dataset = torch.utils.data.Subset(test_dataset, list(range(batch_size)))
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     return train_loader, val_loader, test_loader
 
-def get_cifar10_loaders(limit=False, val_split=0.1):
+def get_cifar10_loaders(limit=False, val_split=0.1, batch_size=64):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))  # Normalization for CIFAR-10
@@ -45,18 +45,18 @@ def get_cifar10_loaders(limit=False, val_split=0.1):
 
     # Apply limit for debugging
     if limit:
-        train_dataset = torch.utils.data.Subset(train_dataset, list(range(64)))
-        val_dataset = torch.utils.data.Subset(val_dataset, list(range(64)))
-        test_dataset = torch.utils.data.Subset(test_dataset, list(range(64)))
+        train_dataset = torch.utils.data.Subset(train_dataset, list(range(batch_size)))
+        val_dataset = torch.utils.data.Subset(val_dataset, list(range(batch_size)))
+        test_dataset = torch.utils.data.Subset(test_dataset, list(range(batch_size)))
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     return train_loader, val_loader, test_loader
 
-def get_svhn_loaders(limit=False, val_split=0.1):
+def get_svhn_loaders(limit=False, val_split=0.1, batch_size=64):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4377, 0.4438, 0.4728), (0.1980, 0.2010, 0.1970))  # Normalization for SVHN
@@ -73,13 +73,13 @@ def get_svhn_loaders(limit=False, val_split=0.1):
 
     # Apply limit for debugging
     if limit:
-        train_dataset = torch.utils.data.Subset(train_dataset, list(range(64)))
-        val_dataset = torch.utils.data.Subset(val_dataset, list(range(64)))
-        test_dataset = torch.utils.data.Subset(test_dataset, list(range(64)))
+        train_dataset = torch.utils.data.Subset(train_dataset, list(range(batch_size)))
+        val_dataset = torch.utils.data.Subset(val_dataset, list(range(batch_size)))
+        test_dataset = torch.utils.data.Subset(test_dataset, list(range(batch_size)))
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     return train_loader, val_loader, test_loader

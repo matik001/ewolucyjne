@@ -164,7 +164,8 @@ class NASOptimizer:
                     f"total_parameters": sum(p.numel() for p in model.parameters()),
                     f"num_layers": len(chromosome.layers)
                 })
-                training_loss, training_acc = train_model(model, train_loader,self.epoch, run, device)
+                optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+                training_loss, training_acc = train_model(model, train_loader,self.epoch, run, optimizer,device)
                 print(f"Training loss: {training_loss}, Training accuracy: {training_acc}")
                 _, fitness = eval_model(model, val_loader, run, device, "Validation")
                 fitness_scores.append(fitness)
