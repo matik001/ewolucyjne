@@ -34,15 +34,15 @@ def run_optimizer(dataset = "MNIST", device="cuda"):
     #     epoch=5
     # )
     input_shape, num_classes = get_dataloader_info(test_loader)
-    population_size = 2
-    num_generations = 3
+    population_size = 10
+    num_generations = 7
     mutation_rate = 0.3
     elite_size = 2
     project_name = "NAS"
     group_name = dataset
-    epoch = 2
-    min_layers = 2
-    max_layers = 5
+    epoch = 20
+    min_layers = 3
+    max_layers = 10
     nas = NASOptimizer(
         input_shape=input_shape,  
         num_classes=num_classes,
@@ -89,6 +89,6 @@ def main(dataset="MNIST", device="cuda"):
 
 if __name__ == "__main__":
     wandb.login()
-    main("MNIST", "cuda")
-    main("SVHN", "cuda")
-    main("CIFAR10", "cuda")
+    main("MNIST", "cuda:1")
+    main("SVHN", "cuda:1")
+    main("CIFAR10", "cuda:1")
