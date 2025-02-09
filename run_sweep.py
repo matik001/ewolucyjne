@@ -11,7 +11,7 @@ data_loaders = {}
 def main(config=None):
     with wandb.init(config=config) as run:
         config = wandb.config 
-        model_name = config.model_path.split("\\")[-1].split(".")[0]
+        model_name = config.model_path.split("/")[-1].split(".")[0]
         phase = model_name.split("_")[1]
         dataset = model_name.split("_")[0]
         run.name = f"{model_name}_{run.id[:4]}"
@@ -40,7 +40,7 @@ def main(config=None):
         eval_model(model, test_loader, run, config.device, "Test")
 
 
-batch_sizes = [32, 64, 256]
+batch_sizes = [32, 64, 256, 2048]
 datasets = ["MNIST", "CIFAR10", "SVHN"]
 sweep_config = {
     'method': 'grid',
@@ -48,10 +48,10 @@ sweep_config = {
     'metric': {'goal': 'maximize', 'name': 'Validation/accuracy'},
     'parameters':
     {
-        'model_path' : {'values': get_newest_files("saved_models")},
+        'model_path' : {'values': get_newest_files("saved_models", 6)},
         'batch_size': {'values': batch_sizes},
         'optimizer': {'values': ['adam', 'sgd']},
-        'learning_rate': {'values': [1e-3, 1e-2]},  
+        'learning_rate': {'values': [1e-4, 1e-3, 1e-2]},  
         'weight_decay': {'values': [1e-4, 1e-3]},  
         'momentum': {'values': [0.9, 0.99]},  
         'epochs': {'values': [20]},
@@ -71,5 +71,5 @@ for dataset in datasets:
 
 
 sweep_id = wandb.sweep(sweep_config, project="NAS Hyperparameter Tuning")
-wandb.agent(sweep_id, main, count=5)
+wandb.agent(sweep_id, main)
 wandb.finish()

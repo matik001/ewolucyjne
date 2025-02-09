@@ -18,10 +18,12 @@ def train_saved_models(device = "cuda"):
     model_files = get_newest_files("saved_models")
     for model_file in model_files:
         print(f"Training model: {model_file}")
+        model_file_cpy = model_file
+        model_file = model_file.split("/")[1]
         dataset = model_file.split('_')[0]
         model_name = model_file.split("\\")[-1].split(".")[0]
         phase = model_name.split("_")[1]
-        model = torch.load(model_file).to(device)
+        model = torch.load(model_file_cpy).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         train_loader, val_loader, test_loader = None, None, None
         if "MNIST" in model_file:
