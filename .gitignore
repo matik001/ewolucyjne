@@ -8,6 +8,8 @@ output.txt
 images/
 saved_models/
 redundant_models/
+visualize_architecture.py
+model_architecture*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -183,3 +185,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
